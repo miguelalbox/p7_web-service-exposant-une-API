@@ -22,8 +22,8 @@ class Customer
     #[ORM\Column(length: 255)]
     private ?string $email = null;
 
-    #[ORM\Column]
-    private ?int $phone = null;
+    #[ORM\Column(length: 255)]
+    private ?string $phone = null;
 
     #[ORM\ManyToOne(inversedBy: 'customers')]
     private ?User $user = null;
@@ -69,12 +69,12 @@ class Customer
         return $this;
     }
 
-    public function getPhone(): ?int
+    public function getPhone(): ?string
     {
         return $this->phone;
     }
 
-    public function setPhone(int $phone): self
+    public function setPhone(string $phone): self
     {
         $this->phone = $phone;
 
