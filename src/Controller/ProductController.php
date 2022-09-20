@@ -23,16 +23,9 @@ class ProductController extends AbstractController
     }
 
     #[Route('/api/product/{id}', name: 'product_single', methods: ['GET'])]
-    public function getProducts($id, ProductRepository $productRepo, SerializerInterface $serializer): JsonResponse
+    public function getProduct($id, Product $product, SerializerInterface $serializer): JsonResponse
     {
-        $product = $productRepo->find($id);
-        if ($product){
             $jsonProductList = $serializer->serialize($product, 'json');
             return new JsonResponse($jsonProductList, Response::HTTP_OK, [], true);
-        }
-
-        return new JsonResponse(null, Response::HTTP_NOT_FOUND);
-
-
     }
 }
