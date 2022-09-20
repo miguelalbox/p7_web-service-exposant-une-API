@@ -13,15 +13,16 @@ use Symfony\Component\Serializer\SerializerInterface;
 class CustomerController extends AbstractController
 {
 
-    #[Route('/api/customers', name: 'customers')]
+    #[Route('/api/customers', name: 'customers', methods: ['GET'])]
     public function getAllCustomers(CustomerRepository $customerRepo, SerializerInterface $serializer): JsonResponse
     {
-        $customerList = $customerRepo->findAll();
+        $customerList = $customerRepo->findBy(['user' => 14]);
+        
 
         $jsonProductList = $serializer->serialize($customerList, 'json');
         return new JsonResponse($jsonProductList, Response::HTTP_OK, [], true);
     }
-    #[Route('/api/customer/{id}', name: 'customer_single')]
+    #[Route('/api/customer/{id}', name: 'customer_single', methods: ['GET'])]
     public function getCustomer(Customer $customer, SerializerInterface $serializer): JsonResponse
     {
 
