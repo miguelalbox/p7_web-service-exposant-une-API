@@ -16,10 +16,10 @@ class CustomerController extends AbstractController
     #[Route('/api/customers', name: 'customers', methods: ['GET'])]
     public function getAllCustomers(CustomerRepository $customerRepo, SerializerInterface $serializer): JsonResponse
     {
-        $customerList = $customerRepo->findBy(['user' => 14]);
+        $customerList = $customerRepo->findAll();
         
 
-        $jsonProductList = $serializer->serialize($customerList, 'json');
+        $jsonProductList = $serializer->serialize($customerList, 'json', ['groups' => 'getCustomers']);
         return new JsonResponse($jsonProductList, Response::HTTP_OK, [], true);
     }
     #[Route('/api/customer/{id}', name: 'customer_single', methods: ['GET'])]
@@ -27,7 +27,7 @@ class CustomerController extends AbstractController
     {
 
 
-        $jsonProductList = $serializer->serialize($customer, 'json');
+        $jsonProductList = $serializer->serialize($customer, 'json', ['groups' => 'getCustomers']);
         return new JsonResponse($jsonProductList, Response::HTTP_OK, [], true);
     }
 }
