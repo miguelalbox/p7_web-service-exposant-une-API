@@ -22,7 +22,7 @@ class ProductController extends AbstractController
         return new JsonResponse($jsonProductList, Response::HTTP_OK, [], true);
     }
 
-    #[Route('/api/product/{id}', name: 'product_single', methods: ['GET'])]
+    #[Route('/api/products/{id}', name: 'product_single', methods: ['GET'])]
     public function getProduct($id, Product $product, SerializerInterface $serializer): JsonResponse
     {
             $jsonProductList = $serializer->serialize($product, 'json');
