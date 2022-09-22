@@ -36,13 +36,23 @@ class AppFixtures extends Fixture
         for ($i = 0; $i < 3; $i++) {
             $user = New User();
             $user->setEmail($email[$i])
-                ->setPassword(password_hash('123', PASSWORD_DEFAULT));
+                 ->setPassword(password_hash('123', PASSWORD_DEFAULT))
+                 ->setRoles(['ROLE_USER']);
 
 
             $manager->persist($user);
 
             $users[] = $user;
         }
+        $userAdmin = New User();
+        $userAdmin->setEmail('admin@gmail.com')
+            ->setPassword(password_hash('admin123', PASSWORD_DEFAULT))
+            ->setRoles(['ROLE_ADMIN']);
+
+
+        $manager->persist($userAdmin);
+
+
 
         $firstname = ['Manon', 'Antoine', 'Edouard', 'Alpha', 'Mahdi', 'Sophie', 'Cindy', 'Hugo', 'Sara', 'Cecile', 'Anais', 'Robert', 'Pepe', 'Miguel', 'Tristan'];
         $lastname = ['Lesage', 'Vincent', 'Dacosta', 'Midi', 'Lesne', 'Bembrahim', 'Stuart', 'Sevilla', 'Rabiah', 'Perreira', 'Jiménez', 'Garcia', 'Foret', 'Richelieu', 'Fore'];
