@@ -32,24 +32,35 @@ class CustomerController extends AbstractController
     #[Route('/api/customers/{id}', name: 'customer_single', methods: ['GET'])]
     public function getCustomer(Customer $customer, SerializerInterface $serializer): JsonResponse
     {
+        $user = $this->getUser();
 
+        //dd($user->getId() == $customer->getUser()->getId());
+        if ($user->getId() == $customer->getUser()->getId()){
+            $jsonCustomerList = $serializer->serialize($customer, 'json', ['groups' => 'getCustomers']);
+            return new JsonResponse($jsonCustomerList, Response::HTTP_OK, [], true);
+        }
 
-        $jsonCustomerList = $serializer->serialize($customer, 'json', ['groups' => 'getCustomers']);
-        return new JsonResponse($jsonCustomerList, Response::HTTP_OK, [], true);
+        return new JsonResponse($serializer->serialize("Ce customer ne vous partiens pas", 'json'), JsonResponse::HTTP_UNAUTHORIZED, [], true);
     }
 
     #[Route('/api/customers/{id}', name: 'customer_single_delete', methods: ['DELETE'])]
-    public function deleteCustomer(Customer $customer, EntityManagerInterface $manager): JsonResponse
+    public function deleteCustomer(Customer $customer, SerializerInterface $serializer, EntityManagerInterface $manager): JsonResponse
     {
-        $manager->remove($customer);
-        $manager->flush();
+        $user = $this->getUser();
+        if ($user->getId() == $customer->getUser()->getId()) {
+            $manager->remove($customer);
+            $manager->flush();
 
-        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+            return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+        }
+        return new JsonResponse($serializer->serialize("Ce customer ne vous partiens pas", 'json'), JsonResponse::HTTP_UNAUTHORIZED, [], true);
+
     }
 
     #[Route('/api/customers', name: 'customer_single_add', methods: ['POST'])]
     public function addCustomer(ValidatorInterface $validator, Request $request, EntityManagerInterface $manager, SerializerInterface $serializer, UrlGeneratorInterface $urlGenerator): JsonResponse
     {
+
         $customer = $serializer->deserialize($request->getContent(), Customer::class, 'json');
         $customer->setUser($this->getUser());
 
@@ -72,6 +83,12 @@ class CustomerController extends AbstractController
     #[Route('/api/customers/{id}', name: 'customer_single_edit', methods: ['PUT'])]
     public function editCustomer(Request $request, Customer $currentCustomer, CustomerRepository $customerRepo, EntityManagerInterface $manager, SerializerInterface $serializer, UrlGeneratorInterface $urlGenerator): JsonResponse
     {
+        $user = $this->getUser();
+        if ($user->getId() != $currentCustomer->getUser()->getId()){
+            return new JsonResponse($serializer->serialize("Ce customer ne vous partiens pas", 'json'), JsonResponse::HTTP_UNAUTHORIZED, [], true);
+
+        }
+
         $customerUpdate = $serializer->deserialize($request->getContent(), Customer::class, 'json', [AbstractNormalizer::OBJECT_TO_POPULATE => $currentCustomer]);
         $manager->persist($customerUpdate);
         $manager->flush();
