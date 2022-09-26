@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Customer;
 use App\Repository\CustomerRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -13,6 +14,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class CustomerController extends AbstractController
 {
@@ -20,7 +22,8 @@ class CustomerController extends AbstractController
     #[Route('/api/customers', name: 'customers', methods: ['GET'])]
     public function getAllCustomers(CustomerRepository $customerRepo, SerializerInterface $serializer): JsonResponse
     {
-        $customerList = $customerRepo->findAll();
+        $user = $this->getUser();
+        $customerList = $customerRepo->findBy(['user' => $user]);
         
 
         $jsonCustomerList = $serializer->serialize($customerList, 'json', ['groups' => 'getCustomers']);
@@ -45,9 +48,17 @@ class CustomerController extends AbstractController
     }
 
     #[Route('/api/customers', name: 'customer_single_add', methods: ['POST'])]
-    public function addCustomer(Request $request, EntityManagerInterface $manager, SerializerInterface $serializer, UrlGeneratorInterface $urlGenerator): JsonResponse
+    public function addCustomer(ValidatorInterface $validator, Request $request, EntityManagerInterface $manager, SerializerInterface $serializer, UrlGeneratorInterface $urlGenerator): JsonResponse
     {
         $customer = $serializer->deserialize($request->getContent(), Customer::class, 'json');
+        $customer->setUser($this->getUser());
+
+        //verification d'error
+        $errors = $validator->validate($customer);
+        if ($errors->count() > 0){
+            return new JsonResponse($serializer->serialize($errors, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
+        }
+
         $manager->persist($customer);
         $manager->flush();
 
