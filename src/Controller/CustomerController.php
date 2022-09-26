@@ -20,10 +20,15 @@ class CustomerController extends AbstractController
 {
 
     #[Route('/api/customers', name: 'customers', methods: ['GET'])]
-    public function getAllCustomers(CustomerRepository $customerRepo, SerializerInterface $serializer): JsonResponse
+    public function getAllCustomers(CustomerRepository $customerRepo, SerializerInterface $serializer, Request $request): JsonResponse
     {
-        $user = $this->getUser();
-        $customerList = $customerRepo->findBy(['user' => $user]);
+
+        //pagination
+        $page = $request->get('page', 1);
+        $limit = $request->get('limit', 3);
+        $user = strval($this->getUser()->getId());
+
+        $customerList = $customerRepo->findAllCustomersWithPagination( $page, $limit, $user);
         
 
         $jsonCustomerList = $serializer->serialize($customerList, 'json', ['groups' => 'getCustomers']);

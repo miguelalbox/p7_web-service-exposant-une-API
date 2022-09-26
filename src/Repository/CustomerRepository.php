@@ -38,6 +38,14 @@ class CustomerRepository extends ServiceEntityRepository
             $this->getEntityManager()->flush();
         }
     }
+    public function findAllCustomersWithPagination($page, $limit, $user){
+        $qb = $this->createQueryBuilder('b')
+            ->where( 'b.user = :user')
+            ->setParameter('user', $user)
+            ->setFirstResult(($page - 1)* $limit)
+            ->setMaxResults($limit);
+        return $qb->getQuery()->getResult();
+    }
 
 //    /**
 //     * @return Customer[] Returns an array of Customer objects
