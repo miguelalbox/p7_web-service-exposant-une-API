@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Customer;
 use App\Repository\CustomerRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use JMS\Serializer\SerializationContext;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -13,7 +14,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use Symfony\Component\Serializer\SerializerInterface;
+use JMS\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class CustomerController extends AbstractController
@@ -30,8 +31,8 @@ class CustomerController extends AbstractController
 
         $customerList = $customerRepo->findAllCustomersWithPagination( $page, $limit, $user);
         
-
-        $jsonCustomerList = $serializer->serialize($customerList, 'json', ['groups' => 'getCustomers']);
+        $context = SerializationContext::create()->setGroups(["getCustomers"]);
+        $jsonCustomerList = $serializer->serialize($customerList, 'json', $context);
         return new JsonResponse($jsonCustomerList, Response::HTTP_OK, [], true);
     }
     #[Route('/api/customers/{id}', name: 'customer_single', methods: ['GET'])]
@@ -41,7 +42,8 @@ class CustomerController extends AbstractController
 
         //dd($user->getId() == $customer->getUser()->getId());
         if ($user->getId() == $customer->getUser()->getId()){
-            $jsonCustomerList = $serializer->serialize($customer, 'json', ['groups' => 'getCustomers']);
+            $context = SerializationContext::create()->setGroups(["getCustomers"]);
+            $jsonCustomerList = $serializer->serialize($customer, 'json', $context);
             return new JsonResponse($jsonCustomerList, Response::HTTP_OK, [], true);
         }
 
@@ -78,7 +80,8 @@ class CustomerController extends AbstractController
         $manager->persist($customer);
         $manager->flush();
 
-        $jsonCustomerList = $serializer->serialize($customer, 'json', ['groups' => 'getCustomers']);
+        $context = SerializationContext::create()->setGroups(["getCustomers"]);
+        $jsonCustomerList = $serializer->serialize($customer, 'json', $context);
 
         $location = $urlGenerator->generate('customer_single', ['id' => $customer->getID()], UrlGeneratorInterface::ABSOLUTE_URL);
 
@@ -93,9 +96,13 @@ class CustomerController extends AbstractController
             return new JsonResponse($serializer->serialize("Ce customer ne vous partiens pas", 'json'), JsonResponse::HTTP_UNAUTHORIZED, [], true);
 
         }
+        $customerGet = $serializer->deserialize($request->getContent(), Customer::class, 'json');
+        $currentCustomer->setPhone($customerGet->getPhone());
+        $currentCustomer->setEmail($customerGet->getEmail());
+        $currentCustomer->setLastname($customerGet->getLastname());
+        $currentCustomer->setFirstname($customerGet->getFirstname());
 
-        $customerUpdate = $serializer->deserialize($request->getContent(), Customer::class, 'json', [AbstractNormalizer::OBJECT_TO_POPULATE => $currentCustomer]);
-        $manager->persist($customerUpdate);
+        $manager->persist($currentCustomer);
         $manager->flush();
 
         return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
