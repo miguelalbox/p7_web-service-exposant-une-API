@@ -25,8 +25,13 @@ class ProductController extends AbstractController
      *     description="Retourne la liste des produits",
      *     @OA\JsonContent(
      *        type="array",
-     *        @OA\Items(ref=@Model(type=Product::class, groups={"getProducts"}))
+     *        @OA\Items(ref=@Model(type=Product::class))
      *     )
+     * )
+     * * @OA\Response(
+     *     response=401,
+     *     description="Retourne error car le token n'es pas a jour ou vous n'est pas connecté",
+     *
      * )
      * @OA\Parameter(
      *     name="page",
@@ -61,6 +66,32 @@ class ProductController extends AbstractController
         return new JsonResponse($jsonProductList, Response::HTTP_OK, [], true);
     }
 
+
+    /**
+     * Cette méthode permet de récupérer l'ensemble des customers by user.
+     *
+     * @OA\Response(
+     *     response=200,
+     *     description="Retourne le produit selon id",
+     *     @OA\JsonContent(
+     *        type="array",
+     *        @OA\Items(ref=@Model(type=Product::class))
+     *     )
+     * )
+     * * @OA\Response(
+     *     response=401,
+     *     description="Retourne error car le token n'es pas a jour ou vous n'est pas connecté",
+     * )
+     * * * @OA\Response(
+     *     response=404,
+     *     description="Retourne error car le produit n'existe pas",
+     * )
+     * @OA\Tag(name="Products")
+     *
+     * @param Product $product
+     * @param SerializerInterface $serializer
+     * @return JsonResponse
+     */
     #[Route('/api/products/{id}', name: 'product_single', methods: ['GET'])]
     public function getProduct($id, Product $product, SerializerInterface $serializer): JsonResponse
     {

@@ -33,6 +33,11 @@ class CustomerController extends AbstractController
      *        @OA\Items(ref=@Model(type=Customer::class, groups={"getCustomers"}))
      *     )
      * )
+     * * @OA\Response(
+     *     response=401,
+     *     description="Retourne error car le token n'es pas a jour ou vous n'est pas connecté",
+     *
+     * )
      * @OA\Parameter(
      *     name="page",
      *     in="query",
@@ -60,14 +65,40 @@ class CustomerController extends AbstractController
         //pagination
         $page = $request->get('page', 1);
         $limit = $request->get('limit', 3);
-        $user = strval($this->getUser()->getId());
+        $userId = strval($this->getUser()->getId());
 
-        $customerList = $customerRepo->findAllCustomersWithPagination( $page, $limit, $user);
+        $customerList = $customerRepo->findAllCustomersWithPagination( $page, $limit, $userId);
         
         $context = SerializationContext::create()->setGroups(["getCustomers"]);
         $jsonCustomerList = $serializer->serialize($customerList, 'json', $context);
         return new JsonResponse($jsonCustomerList, Response::HTTP_OK, [], true);
     }
+
+    /**
+     * Cette méthode permet de récupérer l'ensemble des customers by user.
+     *
+     * @OA\Response(
+     *     response=200,
+     *     description="Retourne le customer selon id",
+     *     @OA\JsonContent(
+     *        type="array",
+     *        @OA\Items(ref=@Model(type=Customer::class, groups={"getCustomers"}))
+     *     )
+     * )
+     * * @OA\Response(
+     *     response=401,
+     *     description="Retourne error car le customer ne vous partiens pas ou le token n'es pas a jour ou vous n'est pas connecté",
+     * )
+     * * * @OA\Response(
+     *     response=404,
+     *     description="Retourne error car le customer n'existe pas",
+     * )
+     * @OA\Tag(name="Customers")
+     *
+     * @param Customer $customer
+     * @param SerializerInterface $serializer
+     * @return JsonResponse
+     */
     #[Route('/api/customers/{id}', name: 'customer_single', methods: ['GET'])]
     public function getCustomer(Customer $customer, SerializerInterface $serializer): JsonResponse
     {
@@ -83,6 +114,30 @@ class CustomerController extends AbstractController
         return new JsonResponse($serializer->serialize("Ce customer ne vous partiens pas", 'json'), JsonResponse::HTTP_UNAUTHORIZED, [], true);
     }
 
+    /**
+     * Cette méthode permet de récupérer l'ensemble des customers by user.
+     *
+     * @OA\Response(
+     *     response=204,
+     *     description="Suprime le customer",
+     *
+     * )
+     * * @OA\Response(
+     *     response=401,
+     *     description="Retourne error car le customer ne vous partiens pas ou le token n'es pas a jour ou vous n'est pas connecté",
+     *
+     * )
+     * * @OA\Response(
+     *    response=404,
+     *    description="Retourne error car le customer n'existe pas",
+     * )
+     * @OA\Tag(name="Customers")
+     *
+     * @param Customer $customer
+     * @param SerializerInterface $serializer
+     * @param EntityManagerInterface $manager
+     * @return JsonResponse
+     */
     #[Route('/api/customers/{id}', name: 'customer_single_delete', methods: ['DELETE'])]
     public function deleteCustomer(Customer $customer, SerializerInterface $serializer, EntityManagerInterface $manager): JsonResponse
     {
@@ -97,6 +152,68 @@ class CustomerController extends AbstractController
 
     }
 
+    /**
+     * Cette méthode permet de récupérer l'ensemble des customers by user.
+     *
+     * @OA\Response(
+     *     response=201,
+     *     description="Le customer a été ajouté",
+     *     @OA\JsonContent(
+     *        type="array",
+     *        @OA\Items(ref=@Model(type=Customer::class, groups={"getCustomers"}))
+     *     )
+     * )
+     * * @OA\Response(
+     *     response=401,
+     *     description="Retourne error car le token n'es pas a jour ou vous n'est pas connecté",
+     *
+     * )
+     * * @OA\Response(
+     *     response=500,
+     *     description="Retourne error car les données ne sont pas correct",
+     *
+     * )
+     *
+     * @OA\RequestBody(
+     *     description="Json payload",
+     *     @OA\MediaType(
+     *          mediaType="application/json",
+     *          @OA\Schema(
+     *              type="object",
+     *              @OA\Property(
+     *                  property="firstname",
+     *                  description="Miguel",
+     *                  type="string",
+     *              ),
+     *              @OA\Property(
+     *                  property="lastname",
+     *                  description="Sevilla",
+     *                  type="string",
+     *              ),
+     *              @OA\Property(
+     *                  property="email",
+     *                  description="miguel@gmail.com",
+     *                  type="string",
+     *              ),
+     *              @OA\Property(
+     *                  property="phone",
+     *                  description="0643796236",
+     *                  type="string",
+     *              ),
+     * )
+     * )
+     *
+     * )
+     *
+     * @OA\Tag(name="Customers")
+     *
+     * @param ValidatorInterface $validator
+     * @param Request $request
+     * @param EntityManagerInterface $manager
+     * @param SerializerInterface $serializer
+     * @param UrlGeneratorInterface $urlGenerator
+     * @return JsonResponse
+     */
     #[Route('/api/customers', name: 'customer_single_add', methods: ['POST'])]
     public function addCustomer(ValidatorInterface $validator, Request $request, EntityManagerInterface $manager, SerializerInterface $serializer, UrlGeneratorInterface $urlGenerator): JsonResponse
     {
@@ -121,6 +238,70 @@ class CustomerController extends AbstractController
         return new JsonResponse($jsonCustomerList, Response::HTTP_CREATED, ["Location" => $location], true);
     }
 
+
+    /**
+     * Cette méthode permet de récupérer l'ensemble des customers by user.
+     *
+     * @OA\Response(
+     *     response=204,
+     *     description="Le customer a été ajouté",
+     *     @OA\JsonContent(
+     *        type="array",
+     *        @OA\Items(ref=@Model(type=Customer::class, groups={"getCustomers"}))
+     *     )
+     * )
+     * * @OA\Response(
+     *     response=401,
+     *     description="Retourne error car le customer ne vous partiens pas ou le token n'es pas a jour ou vous n'est pas connecté",
+     *
+     * )
+     * * @OA\Response(
+     *     response=500,
+     *     description="Retourne error car les données ne sont pas correct",
+     *
+     * )
+     *
+     * @OA\RequestBody(
+     *     description="Json payload",
+     *     @OA\MediaType(
+     *          mediaType="application/json",
+     *          @OA\Schema(
+     *              type="object",
+     *              @OA\Property(
+     *                  property="firstname",
+     *                  description="Miguel",
+     *                  type="string",
+     *              ),
+     *              @OA\Property(
+     *                  property="lastname",
+     *                  description="Sevilla",
+     *                  type="string",
+     *              ),
+     *              @OA\Property(
+     *                  property="email",
+     *                  description="miguel@gmail.com",
+     *                  type="string",
+     *              ),
+     *              @OA\Property(
+     *                  property="phone",
+     *                  description="0643796236",
+     *                  type="string",
+     *              ),
+     * )
+     * )
+     *
+     * )
+     *
+     * @OA\Tag(name="Customers")
+     *
+     * @param Request $request
+     * @param Customer $currentCustomer
+     * @param CustomerRepository $customerRepo
+     * @param EntityManagerInterface $manager
+     * @param SerializerInterface $serializer
+     * @param UrlGeneratorInterface $urlGenerator
+     * @return JsonResponse
+     */
     #[Route('/api/customers/{id}', name: 'customer_single_edit', methods: ['PUT'])]
     public function editCustomer(Request $request, Customer $currentCustomer, CustomerRepository $customerRepo, EntityManagerInterface $manager, SerializerInterface $serializer, UrlGeneratorInterface $urlGenerator): JsonResponse
     {
