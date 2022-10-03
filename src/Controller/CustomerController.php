@@ -175,7 +175,7 @@ class CustomerController extends AbstractController
      * )
      *
      * @OA\RequestBody(
-     *     description="Json payload",
+     *     description="info customer",
      *     @OA\MediaType(
      *          mediaType="application/json",
      *          @OA\Schema(
@@ -262,7 +262,7 @@ class CustomerController extends AbstractController
      * )
      *
      * @OA\RequestBody(
-     *     description="Json payload",
+     *     description="info customer",
      *     @OA\MediaType(
      *          mediaType="application/json",
      *          @OA\Schema(
