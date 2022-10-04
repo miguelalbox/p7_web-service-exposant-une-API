@@ -19,6 +19,8 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Annotations as OA;
+use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 class CustomerController extends AbstractController
 {
@@ -59,7 +61,7 @@ class CustomerController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/api/customers', name: 'customers', methods: ['GET'])]
-    public function getAllCustomers(CustomerRepository $customerRepo, SerializerInterface $serializer, Request $request): JsonResponse
+    public function getAllCustomers(CustomerRepository $customerRepo, TagAwareCacheInterface $cachePool, SerializerInterface $serializer, Request $request): JsonResponse
     {
 
         //pagination
@@ -67,7 +69,15 @@ class CustomerController extends AbstractController
         $limit = $request->get('limit', 3);
         $userId = strval($this->getUser()->getId());
 
-        $customerList = $customerRepo->findAllCustomersWithPagination( $page, $limit, $userId);
+        $idCache = "getAllCustomers-" . $page . "-" . $limit . "-" . $userId;
+
+        $customerList = $cachePool->get($idCache, function (ItemInterface $item) use ($customerRepo, $page, $limit, $userId, $serializer) {
+            //echo ("pas de cache");
+            $item->tag("customersCache");
+            return $customerList = $customerRepo->findAllCustomersWithPagination( $page, $limit, $userId);
+        });
+
+        //$customerList = $customerRepo->findAllCustomersWithPagination( $page, $limit, $userId);
         
         $context = SerializationContext::create()->setGroups(["getCustomers"]);
         $jsonCustomerList = $serializer->serialize($customerList, 'json', $context);
@@ -104,7 +114,6 @@ class CustomerController extends AbstractController
     {
         $user = $this->getUser();
 
-        //dd($user->getId() == $customer->getUser()->getId());
         if ($user->getId() == $customer->getUser()->getId()){
             $context = SerializationContext::create()->setGroups(["getCustomers"]);
             $jsonCustomerList = $serializer->serialize($customer, 'json', $context);
@@ -139,10 +148,11 @@ class CustomerController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/api/customers/{id}', name: 'customer_single_delete', methods: ['DELETE'])]
-    public function deleteCustomer(Customer $customer, SerializerInterface $serializer, EntityManagerInterface $manager): JsonResponse
+    public function deleteCustomer(Customer $customer, SerializerInterface $serializer, TagAwareCacheInterface $cache, EntityManagerInterface $manager): JsonResponse
     {
         $user = $this->getUser();
         if ($user->getId() == $customer->getUser()->getId()) {
+            $cache->invalidateTags(["customersCache"]);
             $manager->remove($customer);
             $manager->flush();
 
@@ -215,7 +225,7 @@ class CustomerController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/api/customers', name: 'customer_single_add', methods: ['POST'])]
-    public function addCustomer(ValidatorInterface $validator, Request $request, EntityManagerInterface $manager, SerializerInterface $serializer, UrlGeneratorInterface $urlGenerator): JsonResponse
+    public function addCustomer(ValidatorInterface $validator, Request $request, TagAwareCacheInterface $cache, EntityManagerInterface $manager, SerializerInterface $serializer, UrlGeneratorInterface $urlGenerator): JsonResponse
     {
 
         $customer = $serializer->deserialize($request->getContent(), Customer::class, 'json');
@@ -226,7 +236,7 @@ class CustomerController extends AbstractController
         if ($errors->count() > 0){
             return new JsonResponse($serializer->serialize($errors, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
         }
-
+        $cache->invalidateTags(["customersCache"]);
         $manager->persist($customer);
         $manager->flush();
 
@@ -303,7 +313,7 @@ class CustomerController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/api/customers/{id}', name: 'customer_single_edit', methods: ['PUT'])]
-    public function editCustomer(Request $request, Customer $currentCustomer, CustomerRepository $customerRepo, EntityManagerInterface $manager, SerializerInterface $serializer, UrlGeneratorInterface $urlGenerator): JsonResponse
+    public function editCustomer(Request $request, Customer $currentCustomer, TagAwareCacheInterface $cache, CustomerRepository $customerRepo, EntityManagerInterface $manager, SerializerInterface $serializer, UrlGeneratorInterface $urlGenerator): JsonResponse
     {
         $user = $this->getUser();
         if ($user->getId() != $currentCustomer->getUser()->getId()){
@@ -316,6 +326,7 @@ class CustomerController extends AbstractController
         $currentCustomer->setLastname($customerGet->getLastname());
         $currentCustomer->setFirstname($customerGet->getFirstname());
 
+        $cache->invalidateTags(["customersCache"]);
         $manager->persist($currentCustomer);
         $manager->flush();
 

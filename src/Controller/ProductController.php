@@ -13,6 +13,8 @@ use Symfony\Component\Routing\Annotation\Route;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Annotations as OA;
+use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 
 class ProductController extends AbstractController
@@ -54,13 +56,19 @@ class ProductController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/api/products', name: 'product', methods: ['GET'])]
-    public function getAllProducts(ProductRepository $productRepo, SerializerInterface $serializer, Request $request): JsonResponse
+    public function getAllProducts(ProductRepository $productRepo, TagAwareCacheInterface $cachePool, SerializerInterface $serializer, Request $request): JsonResponse
     {
         //pagination
         $page = $request->get('page', 1);
         $limit = $request->get('limit', 3);
 
-        $productList = $productRepo->findAllWithPagination($page, $limit);
+        $idCache = "getAllProducts-" . $page . "-" . $limit;
+
+        $productList = $cachePool->get($idCache, function (ItemInterface $item) use ($productRepo, $page, $limit) {
+            //echo ("pas de cache");
+            $item->tag("productsCache");
+            return $productRepo->findAllWithPagination($page, $limit);
+        });
 
         $jsonProductList = $serializer->serialize($productList, 'json');
         return new JsonResponse($jsonProductList, Response::HTTP_OK, [], true);
