@@ -254,7 +254,7 @@ class CustomerController extends AbstractController
      *
      * @OA\Response(
      *     response=204,
-     *     description="Le customer a été ajouté",
+     *     description="Le customer a été modifié",
      *     @OA\JsonContent(
      *        type="array",
      *        @OA\Items(ref=@Model(type=Customer::class, groups={"getCustomers"}))
